@@ -1,7 +1,7 @@
 p2fa-steve
 ==========
 
-Fork of [p2fa.](http://www.ling.upenn.edu/phonetics/p2fa/) This python script computes an alignment between a speech audio file and a verbatim text transcript.
+Fork of [p2fa.](http://www.ling.upenn.edu/phonetics/p2fa/) This python script computes an alignment between a speech audio file and a verbatim text transcript. It also calls on the CMU Sphinx [lmtool](http://www.speech.cs.cmu.edu/tools/lmtool-new.html) to get pronunciations for words that are not in default dictionary (so internet access is required to run the script).
 
 I've made a bunch of changes to the output and input formats, and also to finding pronunciations for words that aren't in the dictionary.
 
