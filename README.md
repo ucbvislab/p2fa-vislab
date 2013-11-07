@@ -5,6 +5,8 @@ Fork of p2fa.
 
 I've made a bunch of changes to the output and input formats, and also to finding pronunciations for words that aren't in the dictionary.
 
+See the original ``readme.txt`` in the repo for more details.
+
 Setup
 -----
 
