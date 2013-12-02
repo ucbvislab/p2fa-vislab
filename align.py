@@ -30,6 +30,7 @@ from pronunciation import Pronounce
 global_word_map = []
 global_speaker_map = []
 global_emo_map = []
+global_lineidx_map = []
 
 def prep_wav(orig_wav, out_wav, sr_override, wave_start, wave_end):
     global sr_models
@@ -199,6 +200,7 @@ def prep_mlf(trsfile, mlffile, word_dictionary, surround, between,
                     #     print "SKIPPING WORD", wrd2
             if len(gwm_entry) > 1:
                 global_word_map.append(gwm_entry)
+                global_lineidx_map.append(i)
                 if speakers is not None:
                     global_speaker_map.append(speakers[i])
                 if emotions is not None:
@@ -324,7 +326,8 @@ def writeJSON(outfile, word_alignments):
         if wrds[total_word_idx][0] != "sp"\
             and wrds[total_word_idx][0] != "{BR}":
             tmp_word["word"] = global_word_map[real_word_count][0]
-            
+            tmp_word["line_idx"] = global_lineidx_map[real_word_count]
+
             if len(global_speaker_map) > 0:
                 tmp_word["speaker"] = global_speaker_map[real_word_count]
             if len(global_emo_map) > 0:
@@ -376,6 +379,7 @@ def writeJSON(outfile, word_alignments):
     
     if wrds[-1][0] != "sp" and wrds[-1][0] != "{BR}":
         tmp_word["word"] = global_word_map[real_word_count][0]
+        tmp_word["line_idx"] = global_lineidx_map[real_word_count]
 
         if len(global_speaker_map) > 0:
             tmp_word["speaker"] = global_speaker_map[real_word_count]

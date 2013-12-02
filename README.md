@@ -58,9 +58,11 @@ WORD = { "word": ORIGINAL_WORD,
          "alignedWord": WORD_PROCESSED_BY_SYSTEM,
          "start": TIME,
          "end": TIME,
-         "speaker": NAME_OF_SPEAKER }
+         "speaker": NAME_OF_SPEAKER,
+         "line_idx": LINE_IDX }
 ORIGINAL_WORD = string
 WORD_PROCESSED_BY_SYSTEM = string (all caps, sanitized)
 TIME = Number (in seconds)
 NAME_OF_SPEAKER = string
+LINE_IDX = Integer (index of input line that word came from)
 ```
