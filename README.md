@@ -7,6 +7,8 @@ I've made a bunch of changes to the output and input formats, and also to findin
 
 See the original ``readme.txt`` in the repo for more details.
 
+This script was used in my research project: [Content-Based Tools for Editing Audio Stories](http://vis.berkeley.edu/papers/audiostories) [UIST 2013]. 
+
 Setup
 -----
 
