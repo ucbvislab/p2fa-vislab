@@ -12,9 +12,18 @@ This script was used in my research project: [Content-Based Tools for Editing Au
 Setup
 -----
 
-Install HTK 3.4. Note: 3.4.1 *will not work*. [Get HTK here.](http://htk.eng.cam.ac.uk/)
 
-Install python dependencies:
+### Install HTK 3.4. Note: 3.4.1 *will not work*. [Get HTK here.](http://htk.eng.cam.ac.uk/)
+
+On OSX this can be a pain. Here's one method that works:
+
+`./configure --without-x --disable-hslab CFLAGS='-I/usr/include/malloc'`
+
+Then edit `HTKLib/esignal.c` and replace every occurence of `ARCH` with `darwin`.
+
+Then run `make all && sudo make install`
+
+### Install python dependencies:
 
 ``pip install -r requirements.txt``
 
