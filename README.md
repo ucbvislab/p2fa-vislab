@@ -77,7 +77,7 @@ For example:
 ]
 ```
 
-(Although, there's no reason to list those two lines separately because they're the same speaker.)
+(Although, there's no reason to list those two lines separately because they're the same speaker.) To convert a plain text transcript into a file that adheres to this schema, see [text\_to\_transcript.py](text_to_transcript.py).
 
 The output will be a json with the following jsonschema:
 
