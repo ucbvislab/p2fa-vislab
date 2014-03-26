@@ -15,6 +15,8 @@ import sys
 import getopt
 import wave
 import re
+import subprocess
+from subprocess import check_output
 try:
     import simplejson as json
 except:
@@ -119,6 +121,9 @@ def prep_mlf(trsfile, mlffile, word_dictionary, surround, between,
             # remove hanging punctuation before we get started
             txt = txt.replace(' ' + pun + ' ', ' ')
         
+        hyph_punct = re.compile(r"(-[-]+)")
+        txt = hyph_punct.sub(r"\1 ", txt)
+
         txt = re.sub(r"([A-Za-z])\.\.\.([A-Za-z])", r"\1... \2", txt)
 
         txt_with_pun = txt.split()
@@ -136,7 +141,7 @@ def prep_mlf(trsfile, mlffile, word_dictionary, surround, between,
         
         if (len(txt) != len(txt_with_pun)):
             # Try not to use hyphenated words either, if at all possible!
-
+            import pdb; pdb.set_trace()
             raise Exception("Floating punctuation! Remove this from your transcript.")
 
         for w_idx, wrd in enumerate(txt):
@@ -469,7 +474,9 @@ def create_plp(hcopy_config) :
     os.system('HCopy -T 1 -C ' + hcopy_config + ' -S ./tmp/codetr.scp')
     
 def viterbi(input_mlf, word_dictionary, output_mlf, phoneset, hmmdir) :
-    os.system('HVite -T 1 -a -m -I ' + input_mlf + ' -H ' + hmmdir + '/macros -H ' + hmmdir + '/hmmdefs  -S ./tmp/test.scp -i ' + output_mlf + ' -p 0.0 -s 5.0 ' + word_dictionary + ' ' + phoneset + ' > ./tmp/aligned.results')
+    #command = 'HVite -T 1 -a -m -I ' + input_mlf + ' -H ' + hmmdir + '/macros -H ' + hmmdir + '/hmmdefs  -S ./tmp/test.scp -i ' + output_mlf + ' -p 0.0 -s 5.0 ' + word_dictionary + ' ' + phoneset + ' > ./tmp/aligned.results'
+    command = 'HVite -T 1 -a -m -I ' + input_mlf + ' -H ' + hmmdir + '/macros -H ' + hmmdir + '/hmmdefs  -S ./tmp/test.scp -i ' + output_mlf + ' -p 0.0 -s 5.0 ' + word_dictionary + ' ' + phoneset
+    os.system(command)
     
 def getopt2(name, opts, default = None) :
     value = [v for n,v in opts if n==name]
