@@ -7,7 +7,7 @@ import simplejson as json
 import jsonschema
 
 def text_to_transcript(text):
-    transcript_schema = json.load(open("transcript_schema.json"))
+    transcript_schema = json.load(open("alignment-schemas/transcript_schema.json"))
 
     paragraphs = text.split("\n");
     out = []
