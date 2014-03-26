@@ -1,0 +1,3 @@
+[submodule "alignment-schemas"]
+	path = alignment-schemas
+	url = git@github.com:srubin/alignment-schemas.git

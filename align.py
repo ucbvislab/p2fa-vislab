@@ -26,8 +26,8 @@ except:
 import inflect
 import jsonschema
 
-TRANSCRIPT_SCHEMA = json.load(open("transcript_schema.json"))
-ALIGNMENT_SCHEMA = json.load(open("alignment_schema.json"))
+TRANSCRIPT_SCHEMA = json.load(open("alignment-schemas/transcript_schema.json"))
+ALIGNMENT_SCHEMA = json.load(open("alignment-schemas/alignment_schema.json"))
 
 from pronunciation import Pronounce
 
@@ -101,7 +101,7 @@ def prep_mlf(trsfile, mlffile, word_dictionary, surround, between,
         try:
             jsonschema.validate(dialog, TRANSCRIPT_SCHEMA)
         except jsonschema.ValidationError, e:
-            print "Input transcript file is not in the proper format.\nSee transcript_schema.json or https://github.com/srubin/p2fa-steve"
+            print "Input transcript file is not in the proper format.\nSee alignment-schemas/transcript_schema.json or https://github.com/srubin/p2fa-steve"
             raise e
 
         lines = [dl["line"] for dl in dialog]
@@ -412,7 +412,7 @@ def writeJSON(outfile, word_alignments):
     try:
         jsonschema.validate(out_dict, ALIGNMENT_SCHEMA)
     except jsonschema.ValidationError, e:
-        print "Output is not a valid Alignment according to alignment_schema.json"
+        print "Output is not a valid Alignment according to alignment-schemas/alignment_schema.json"
         raise e
 
     with open(outfile, "w") as f_out:
