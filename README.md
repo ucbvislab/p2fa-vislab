@@ -87,6 +87,7 @@ The output will be a json with the following jsonschema:
     "description": "A alignment of a transcript to an audio file",
     "$schema": "http://json-schema.org/draft-04/schema#",
     "type": "object",
+    "additionalProperties": true,
     "properties": {
         "words": {
             "type": "array",
