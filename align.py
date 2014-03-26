@@ -24,6 +24,10 @@ except:
     
 # for converting numbers to words
 import inflect
+import jsonschema
+
+TRANSCRIPT_SCHEMA = json.load(open("transcript_schema.json"))
+ALIGNMENT_SCHEMA = json.load(open("alignment_schema.json"))
 
 from pronunciation import Pronounce
 
@@ -92,6 +96,14 @@ def prep_mlf(trsfile, mlffile, word_dictionary, surround, between,
 
     if dialog_file:
         dialog = json.load(open(trsfile, 'r'))
+
+        # make sure this is a valid transcript
+        try:
+            jsonschema.validate(dialog, TRANSCRIPT_SCHEMA)
+        except jsonschema.ValidationError, e:
+            print "Input transcript file is not in the proper format.\nSee transcript_schema.json or https://github.com/srubin/p2fa-steve"
+            raise e
+
         lines = [dl["line"] for dl in dialog]
         speakers = [dl["speaker"] for dl in dialog]
         if "emotion" in dialog[0]:
@@ -397,6 +409,12 @@ def writeJSON(outfile, word_alignments):
     
     out_dict["words"].append(tmp_word)
     
+    try:
+        jsonschema.validate(out_dict, ALIGNMENT_SCHEMA)
+    except jsonschema.ValidationError, e:
+        print "Output is not a valid Alignment according to alignment_schema.json"
+        raise e
+
     with open(outfile, "w") as f_out:
         json.dump(out_dict, f_out, indent=4)
     
@@ -474,8 +492,8 @@ def create_plp(hcopy_config) :
     os.system('HCopy -T 1 -C ' + hcopy_config + ' -S ./tmp/codetr.scp')
     
 def viterbi(input_mlf, word_dictionary, output_mlf, phoneset, hmmdir) :
-    #command = 'HVite -T 1 -a -m -I ' + input_mlf + ' -H ' + hmmdir + '/macros -H ' + hmmdir + '/hmmdefs  -S ./tmp/test.scp -i ' + output_mlf + ' -p 0.0 -s 5.0 ' + word_dictionary + ' ' + phoneset + ' > ./tmp/aligned.results'
-    command = 'HVite -T 1 -a -m -I ' + input_mlf + ' -H ' + hmmdir + '/macros -H ' + hmmdir + '/hmmdefs  -S ./tmp/test.scp -i ' + output_mlf + ' -p 0.0 -s 5.0 ' + word_dictionary + ' ' + phoneset
+    command = 'HVite -T 1 -a -m -I ' + input_mlf + ' -H ' + hmmdir + '/macros -H ' + hmmdir + '/hmmdefs  -S ./tmp/test.scp -i ' + output_mlf + ' -p 0.0 -s 5.0 ' + word_dictionary + ' ' + phoneset + ' > ./tmp/aligned.results'
+    # command = 'HVite -T 1 -a -m -I ' + input_mlf + ' -H ' + hmmdir + '/macros -H ' + hmmdir + '/hmmdefs  -S ./tmp/test.scp -i ' + output_mlf + ' -p 0.0 -s 5.0 ' + word_dictionary + ' ' + phoneset
     os.system(command)
     
 def getopt2(name, opts, default = None) :
