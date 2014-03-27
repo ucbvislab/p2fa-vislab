@@ -9,9 +9,10 @@ import jsonschema
 def text_to_transcript(text):
     transcript_schema = json.load(open("alignment-schemas/transcript_schema.json"))
 
-    paragraphs = text.split("\n");
+    paragraphs = text.split("\n\n");
     out = []
     for para in paragraphs:
+        para = para.replace("\n", " ");
         if para == "":
             continue
 
