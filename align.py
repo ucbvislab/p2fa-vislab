@@ -413,7 +413,8 @@ def writeJSON(outfile, word_alignments):
         jsonschema.validate(out_dict, ALIGNMENT_SCHEMA)
     except jsonschema.ValidationError, e:
         print "Output is not a valid Alignment according to alignment-schemas/alignment_schema.json"
-        raise e
+        print e
+        pass
 
     with open(outfile, "w") as f_out:
         json.dump(out_dict, f_out, indent=4)
