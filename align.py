@@ -26,8 +26,11 @@ except:
 import inflect
 import jsonschema
 
-TRANSCRIPT_SCHEMA = json.load(open("alignment-schemas/transcript_schema.json"))
-ALIGNMENT_SCHEMA = json.load(open("alignment-schemas/alignment_schema.json"))
+# this may only work when this is run from the command line
+this_dir = os.path.dirname(os.path.realpath(__file__))
+
+TRANSCRIPT_SCHEMA = json.load(open(os.path.join(this_dir, "alignment-schemas/transcript_schema.json")))
+ALIGNMENT_SCHEMA = json.load(open(os.path.join(this_dir, "alignment-schemas/alignment_schema.json")))
 
 from pronunciation import Pronounce
 
