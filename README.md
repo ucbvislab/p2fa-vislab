@@ -19,7 +19,7 @@ On OSX this can be a pain. Here's one method that works:
 
 `./configure --without-x --disable-hslab CFLAGS='-I/usr/include/malloc'`
 
-Then edit `HTKLib/esignal.c` and replace every occurence of `ARCH` with `darwin`.
+Then edit `HTKLib/esignal.c` and replace every occurence of `ARCH` with `"darwin"`.
 
 Then run `make all && sudo make install`
 
