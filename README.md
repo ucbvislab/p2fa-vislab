@@ -33,7 +33,7 @@ Usage
 
 ``python align.py audio_file.wav transcript_input.json aligned_output.json``
 
-The input ``audio_file.wav`` must be 16 bit, mono, and have a samplerate of 16 Khz
+The input ``audio_file.wav`` must be 16 bit and mono.
 
 The input transcript json must have the following [jsonschema](http://json-schema.org): 
 
