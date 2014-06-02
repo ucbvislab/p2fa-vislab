@@ -1,4 +1,6 @@
+click
 inflect
 requests
 simplejson
 jsonschema
+tgt
