@@ -28,6 +28,12 @@ Then run `make all && sudo make install`
 ``pip install -r requirements.txt``
 
 
+### Install sox
+
+On OSX, with homebrew:
+
+``brew install sox``
+
 Usage
 -----
 
