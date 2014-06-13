@@ -133,3 +133,10 @@ The output will be a json with the following jsonschema:
     }
 }
 ```
+
+TextGrid output
+---------------
+
+You can also specifiy `--textgrid`  and `--no-json` on the command
+line to get the output of the script as a Praat TextGrid file instead
+of in the json format.
