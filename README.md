@@ -34,6 +34,16 @@ On OSX, with homebrew:
 
 ``brew install sox``
 
+### Initialize submodules
+
+In the p2fa-vislab directory, run:
+
+``git submodule init``
+
+and
+
+``git submodule update``
+
 Usage
 -----
 
