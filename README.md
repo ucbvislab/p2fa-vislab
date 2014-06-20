@@ -1,5 +1,5 @@
-p2fa-steve
-==========
+p2fa-vislab
+===========
 
 Fork of [p2fa.](http://www.ling.upenn.edu/phonetics/p2fa/) This python script computes an alignment between a speech audio file and a verbatim text transcript. It also calls on the CMU Sphinx [lmtool](http://www.speech.cs.cmu.edu/tools/lmtool-new.html) to get pronunciations for words that are not in default dictionary (so internet access is required to run the script).
 
@@ -19,7 +19,7 @@ On OSX this can be a pain. Here's one method that works:
 
 `./configure --without-x --disable-hslab CFLAGS='-I/usr/include/malloc'`
 
-Then edit `HTKLib/esignal.c` and replace every occurence of `ARCH` with `darwin`.
+Then edit `HTKLib/esignal.c` and replace every occurence of `ARCH` with `"darwin"`.
 
 Then run `make all && sudo make install`
 
@@ -28,12 +28,28 @@ Then run `make all && sudo make install`
 ``pip install -r requirements.txt``
 
 
+### Install sox
+
+On OSX, with homebrew:
+
+``brew install sox``
+
+### Initialize submodules
+
+In the p2fa-vislab directory, run:
+
+``git submodule init``
+
+and
+
+``git submodule update``
+
 Usage
 -----
 
 ``python align.py audio_file.wav transcript_input.json aligned_output.json``
 
-The input ``audio_file.wav`` must be 16 bit, mono, and have a samplerate of 16 Khz
+The input ``audio_file.wav`` must be 16 bit and mono.
 
 The input transcript json must have the following [jsonschema](http://json-schema.org): 
 
@@ -127,3 +143,10 @@ The output will be a json with the following jsonschema:
     }
 }
 ```
+
+TextGrid output
+---------------
+
+You can also specifiy `--textgrid`  and `--no-json` on the command
+line to get the output of the script as a Praat TextGrid file instead
+of in the json format.

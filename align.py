@@ -25,6 +25,8 @@ except:
 # for converting numbers to words
 import inflect
 import jsonschema
+import click
+import tgt
 
 # this may only work when this is run from the command line
 this_dir = os.path.dirname(os.path.realpath(__file__))
@@ -41,9 +43,7 @@ global_speaker_map = []
 global_emo_map = []
 global_lineidx_map = []
 
-def prep_wav(orig_wav, out_wav, sr_override, wave_start, wave_end):
-    global sr_models
-    
+def prep_wav(orig_wav, out_wav, sr_override, sr_models, wave_start, wave_end):
     if os.path.exists(out_wav) and False :
         f = wave.open(out_wav, 'r')
         SR = f.getframerate()
@@ -423,62 +423,85 @@ def writeJSON(outfile, word_alignments):
         json.dump(out_dict, f_out, indent=4)
     
 
-def writeTextGrid(outfile, word_alignments) :
-    # make the list of just phone alignments
-    phons = []
-    for wrd in word_alignments :
-        phons.extend(wrd[1:]) # skip the word label
+def writeTextGrid(outfile, word_alignments):
+    tg = tgt.TextGrid()
+    phone_tier = tgt.IntervalTier(name='phone')
+    word_tier = tgt.IntervalTier(name='word')
+
+    for data in word_alignments:
+        word = data[0]
+        phones = data[1:]
+
+        if len(phones) > 0:
+            start_time = phones[0][1]
+            end_time = phones[-1][2]
+
+            word_tier.add_interval(
+                tgt.Interval(start_time, end_time, text=word))
+
+            for (p, p_start, p_end) in phones:
+                phone_tier.add_interval(
+                    tgt.Interval(p_start, p_end, text=p))
+    tg.add_tier(phone_tier)
+    tg.add_tier(word_tier)
+
+    tgt.io.write_to_file(tg, outfile, format='long')
+
+    # # make the list of just phone alignments
+    # phons = []
+    # for wrd in word_alignments :
+    #     phons.extend(wrd[1:]) # skip the word label
         
-    # make the list of just word alignments
-    # we're getting elements of the form:
-    #   ["word label", ["phone1", start, end], ["phone2", start, end], ...]
-    wrds = []
-    for wrd in word_alignments :
-        # If no phones make up this word, then it was an optional word
-        # like a pause that wasn't actually realized.
-        if len(wrd) == 1 :
-            continue
-        wrds.append([wrd[0], wrd[1][1], wrd[-1][2]]) # word label, first phone start time, last phone end time
+    # # make the list of just word alignments
+    # # we're getting elements of the form:
+    # #   ["word label", ["phone1", start, end], ["phone2", start, end], ...]
+    # wrds = []
+    # for wrd in word_alignments :
+    #     # If no phones make up this word, then it was an optional word
+    #     # like a pause that wasn't actually realized.
+    #     if len(wrd) == 1 :
+    #         continue
+    #     wrds.append([wrd[0], wrd[1][1], wrd[-1][2]]) # word label, first phone start time, last phone end time
     
-    #write the phone interval tier
+    # #write the phone interval tier
     
-    # steve edits 1/23/2013
-    fw = open(outfile, 'w')
-    # fw.write('File type = "ooTextFile short"\n')
-    fw.write('File type = "ooTextFile"\n')
-    # fw.write('"TextGrid"\n')
-    fw.write('Object class = "TextGrid"\n')
-    fw.write('\n')
-    fw.write(str(phons[0][1]) + '\n')
-    fw.write(str(phons[-1][2]) + '\n')
-    fw.write('<exists>\n')
-    fw.write('2\n')
-    fw.write('"IntervalTier"\n')
-    fw.write('"phone"\n')
-    fw.write(str(phons[0][1]) + '\n')
-    fw.write(str(phons[-1][-1]) + '\n')
-    fw.write(str(len(phons)) + '\n')
-    for k in range(len(phons)):
-        fw.write(str(phons[k][1]) + '\n')
-        fw.write(str(phons[k][2]) + '\n')
-        fw.write('"' + phons[k][0] + '"' + '\n')
+    # # steve edits 1/23/2013
+    # fw = open(outfile, 'w')
+    # # fw.write('File type = "ooTextFile short"\n')
+    # fw.write('File type = "ooTextFile"\n')
+    # # fw.write('"TextGrid"\n')
+    # fw.write('Object class = "TextGrid"\n')
+    # fw.write('\n')
+    # fw.write(str(phons[0][1]) + '\n')
+    # fw.write(str(phons[-1][2]) + '\n')
+    # fw.write('<exists>\n')
+    # fw.write('2\n')
+    # fw.write('"IntervalTier"\n')
+    # fw.write('"phone"\n')
+    # fw.write(str(phons[0][1]) + '\n')
+    # fw.write(str(phons[-1][-1]) + '\n')
+    # fw.write(str(len(phons)) + '\n')
+    # for k in range(len(phons)):
+    #     fw.write(str(phons[k][1]) + '\n')
+    #     fw.write(str(phons[k][2]) + '\n')
+    #     fw.write('"' + phons[k][0] + '"' + '\n')
     
-    #write the word interval tier
-    fw.write('"IntervalTier"\n')
-    fw.write('"word"\n')
-    fw.write(str(phons[0][1]) + '\n')
-    fw.write(str(phons[-1][-1]) + '\n')
-    fw.write(str(len(wrds)) + '\n')
-    for k in range(len(wrds) - 1):
-        fw.write(str(wrds[k][1]) + '\n')
-        fw.write(str(wrds[k+1][1]) + '\n')
-        fw.write('"' + wrds[k][0] + '"' + '\n')
+    # #write the word interval tier
+    # fw.write('"IntervalTier"\n')
+    # fw.write('"word"\n')
+    # fw.write(str(phons[0][1]) + '\n')
+    # fw.write(str(phons[-1][-1]) + '\n')
+    # fw.write(str(len(wrds)) + '\n')
+    # for k in range(len(wrds) - 1):
+    #     fw.write(str(wrds[k][1]) + '\n')
+    #     fw.write(str(wrds[k+1][1]) + '\n')
+    #     fw.write('"' + wrds[k][0] + '"' + '\n')
     
-    fw.write(str(wrds[-1][1]) + '\n')
-    fw.write(str(phons[-1][2]) + '\n')
-    fw.write('"' + wrds[-1][0] + '"' + '\n')               
+    # fw.write(str(wrds[-1][1]) + '\n')
+    # fw.write(str(phons[-1][2]) + '\n')
+    # fw.write('"' + wrds[-1][0] + '"' + '\n')               
     
-    fw.close()
+    # fw.close()
 
 def prep_working_directory() :
     os.system("rm -r -f ./tmp")
@@ -506,47 +529,33 @@ def getopt2(name, opts, default = None) :
         return default
     return value[0]
 
-if __name__ == '__main__':
-    
-    if sys.argv[1] == "debug":
-        output_mlf = './tmp/aligned.mlf'
-        outfile = './obama.json'
-        prep_mlf('/Users/srubin/Documents/berkeley/research/music/radioedit/alignment/app/static/obama.transcript', './tmp/tmp.mlf', "./tmp/dict", "sp",
-            "sp", dialog_file=True)
-            
-        writeJSON(outfile, readAlignedMLF(output_mlf, 11025, 0.0))
-        sys.exit()
-    
-    try:
-        opts, args = getopt.getopt(sys.argv[1:], "r:s:e:", ["model="])
-        
-        # get the three mandatory arguments
-        if len(args) != 3 :
-            raise ValueError("Specify wavefile, a transcript file, and an output file!")
-            
-        wavfile, trsfile, outfile = args
-        
-        sr_override = getopt2("-r", opts, None)
-        wave_start = getopt2("-s", opts, "0.0")
-        wave_end = getopt2("-e", opts, None)
-        surround_token = "sp" #getopt2("-p", opts, 'sp')
-        between_token = ["sp"] #getopt2("-b", opts, 'sp')
-        
-        if surround_token.strip() == "":
-            surround_token = None
-        
-        mypath = getopt2("--model", opts, None)
-    except :
-        print __doc__
-        (type, value, traceback) = sys.exc_info()
-        print value
-        sys.exit(0)
-    
+
+@click.command()
+@click.argument('wavfile')
+@click.argument('trsfile')
+@click.argument('outfile')
+@click.option('--json/--no-json', default=True,
+              help="Export json alignment")
+@click.option('--textgrid/--no-textgrid', default=False,
+              help="Export Praat TextGrid alignment")
+def do_alignment(wavfile, trsfile, outfile, json, textgrid):
+    # sr_override = getopt2("-r", opts, None)
+    # wave_start = getopt2("-s", opts, "0.0")
+    # wave_end = getopt2("-e", opts, None)
+    sr_override = None
+    wave_start = "0.0"
+    wave_end = None
+    surround_token = "sp"
+    between_token = ["sp"]
+
+    # mypath = getopt2("--model", opts, None)
+    mypath = None
+
     # If no model directory was said explicitly, get directory containing this script.
     hmmsubdir = ""
     sr_models = None
     if mypath == None :
-        mypath = os.path.dirname(os.path.abspath(sys.argv[0])) + "/model"
+        mypath = os.path.dirname(os.path.realpath(__file__)) + "/model"
         hmmsubdir = "FROM-SR"
         # sample rates for which there are acoustic models set up, otherwise
         # the signal must be resampled to one of these rates.
@@ -570,7 +579,7 @@ if __name__ == '__main__':
     
     #prepare wavefile: do a resampling if necessary
     tmpwav = "./tmp/sound.wav"
-    SR = prep_wav(wavfile, tmpwav, sr_override, wave_start, wave_end)
+    SR = prep_wav(wavfile, tmpwav, sr_override, sr_models, wave_start, wave_end)
     
     if hmmsubdir == "FROM-SR" :
         hmmsubdir = "/" + str(SR)
@@ -599,9 +608,102 @@ if __name__ == '__main__':
         mpfile = mypath + '/hmmnames'
     viterbi(input_mlf, word_dictionary, output_mlf, mpfile, mypath + hmmsubdir)
 
-    # output as json
-    writeJSON(outfile, readAlignedMLF(output_mlf, SR, float(wave_start)))
+    if json:
+        # output as json
+        writeJSON(outfile, readAlignedMLF(output_mlf, SR, float(wave_start)))
 
-    # output the alignment as a Praat TextGrid
+    if textgrid:
+        # output the alignment as a Praat TextGrid
+        writeTextGrid(outfile, readAlignedMLF(output_mlf, SR, float(wave_start)))
+
+
+if __name__ == '__main__':
+    do_alignment()
+    # try:
+    #     opts, args = getopt.getopt(sys.argv[1:], "r:s:e:", ["model="])
+        
+    #     # get the three mandatory arguments
+    #     if len(args) != 3 :
+    #         raise ValueError("Specify wavefile, a transcript file, and an output file!")
+            
+    #     wavfile, trsfile, outfile = args
+        
+    #     sr_override = getopt2("-r", opts, None)
+    #     wave_start = getopt2("-s", opts, "0.0")
+    #     wave_end = getopt2("-e", opts, None)
+    #     surround_token = "sp" #getopt2("-p", opts, 'sp')
+    #     between_token = ["sp"] #getopt2("-b", opts, 'sp')
+        
+    #     if surround_token.strip() == "":
+    #         surround_token = None
+        
+    #     mypath = getopt2("--model", opts, None)
+    # except :
+    #     print __doc__
+    #     (type, value, traceback) = sys.exc_info()
+    #     print value
+    #     sys.exit(0)
+    
+    # # If no model directory was said explicitly, get directory containing this script.
+    # hmmsubdir = ""
+    # sr_models = None
+    # if mypath == None :
+    #     mypath = os.path.dirname(os.path.abspath(sys.argv[0])) + "/model"
+    #     hmmsubdir = "FROM-SR"
+    #     # sample rates for which there are acoustic models set up, otherwise
+    #     # the signal must be resampled to one of these rates.
+    #     sr_models = [8000, 11025, 16000]
+    
+    # if sr_override != None and sr_models != None and not sr_override in sr_models :
+    #     raise ValueError, "invalid sample rate: not an acoustic model available"
+        
+    # word_dictionary = "./tmp/dict"
+    # input_mlf = './tmp/tmp.mlf'
+    # output_mlf = './tmp/aligned.mlf'
+    
+    # # create working directory
+    # prep_working_directory()
+    
+    # # create ./tmp/dict by concatening our dict with a local one
+    # if os.path.exists("dict.local"):
+    #     os.system("cat " + mypath + "/dict dict.local > " + word_dictionary)
+    # else:
+    #     os.system("cat " + mypath + "/dict > " + word_dictionary)
+    
+    # #prepare wavefile: do a resampling if necessary
+    # tmpwav = "./tmp/sound.wav"
+    # SR = prep_wav(wavfile, tmpwav, sr_override, wave_start, wave_end)
+    
+    # if hmmsubdir == "FROM-SR" :
+    #     hmmsubdir = "/" + str(SR)
+    
+    # #prepare mlfile
+    # prep_mlf(trsfile, input_mlf, word_dictionary, surround_token,
+    #     between_token, dialog_file=True)
+ 
+    # # (do this again because we update dict.local in prep_mlf)
+    # if os.path.exists("dict.tmp"):
+    #     os.system("cat " + mypath + "/dict dict.tmp > " + word_dictionary)
+    #     os.system("sort " + word_dictionary + " -o " + word_dictionary)
+    # else:
+    #     os.system("cat " + mypath + "/dict > " + word_dictionary)
+ 
+    # #prepare scp files
+    # prep_scp(tmpwav)
+    
+    # # generate the plp file using a given configuration file for HCopy
+    # create_plp(mypath + hmmsubdir + '/config')
+    
+    # # run Verterbi decoding
+    # #print "Running HVite..."
+    # mpfile = mypath + '/monophones'
+    # if not os.path.exists(mpfile) :
+    #     mpfile = mypath + '/hmmnames'
+    # viterbi(input_mlf, word_dictionary, output_mlf, mpfile, mypath + hmmsubdir)
+
+    # # output as json
+    # writeJSON(outfile, readAlignedMLF(output_mlf, SR, float(wave_start)))
+
+    # # output the alignment as a Praat TextGrid
     # writeTextGrid(outfile, readAlignedMLF(output_mlf, SR, float(wave_start)))
 
