@@ -132,7 +132,7 @@ def prep_mlf(trsfile, mlffile, word_dictionary, surround, between,
         txt = txt.replace('{laugh}', '{LG}').replace('{laughter}', '{LG}')
         txt = txt.replace('{cough}', '{CG}').replace('{lipsmack}', '{LS}')
         
-        for pun in [',', '.', ':', ';', '!', '?', '"', '%', '(', ')', '--', '---']:
+        for pun in [',', '.', ':', ';', '!', '?', '"', '%', '(', ')', '-', '--', '---']:
             # remove hanging punctuation before we get started
             txt = txt.replace(' ' + pun + ' ', ' ')
         
