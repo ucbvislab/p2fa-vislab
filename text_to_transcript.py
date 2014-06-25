@@ -4,13 +4,23 @@
 
 import sys
 import simplejson as json
+import os.path
 
+import click
 import jsonschema
 
 
-def text_to_transcript(text):
-    transcript_schema = json.load(
-        open("alignment-schemas/transcript_schema.json"))
+@click.command()
+@click.argument('text_file')
+@click.option('--output-file', default=None, help="Output transcript file")
+def text_to_transcript(text_file, output_file):
+    text = open(text_file).read()
+
+    filedir = os.path.dirname(os.path.realpath(__file__))
+    schema_path = os.path.join(
+        filedir, "alignment-schemas/transcript_schema.json")
+
+    transcript_schema = json.load(open(schema_path))
 
     paragraphs = text.split("\n\n")
     out = []
@@ -26,8 +36,12 @@ def text_to_transcript(text):
         out.append(line)
 
     jsonschema.validate(out, transcript_schema)
-    return json.dumps(out, indent=4)
-
+    if output_file is None:
+        print json.dumps(out, indent=4)
+    else:
+        with open(output_file, 'w') as f:
+            f.write(json.dumps(out, indent=4))
+    return
 
 if __name__ == "__main__":
-    print text_to_transcript(open(sys.argv[1]).read())
+    text_to_transcript()
