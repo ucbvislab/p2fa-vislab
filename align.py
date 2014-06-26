@@ -133,6 +133,9 @@ def prep_mlf(trsfile, mlffile, word_dictionary, surround, between,
         txt = txt.replace('{cough}', '{CG}').replace('{lipsmack}', '{LS}')
         
         for pun in [',', '.', ':', ';', '!', '?', '"', '%', '(', ')', '-', '--', '---']:
+            if txt.startswith(pun + ' '):
+                txt = txt[2:]
+
             # remove hanging punctuation before we get started
             txt = txt.replace(' ' + pun + ' ', ' ')
         
@@ -299,11 +302,14 @@ def readAlignedMLF(mlffile, SR, wave_start):
     return ret
 
 # steve added 1/23/2013
-def writeJSON(outfile, word_alignments):
+def writeJSON(outfile, word_alignments, phonemes=False):
     # make the list of just phone alignments
     phons = []
+    word_phons = []
     for wrd in word_alignments :
         phons.extend(wrd[1:]) # skip the word label
+        if len(wrd) != 1:
+            word_phons.append(wrd[1:])
 
     # make the list of just word alignments
     # we're getting elements of the form:
@@ -346,6 +352,9 @@ def writeJSON(outfile, word_alignments):
         if wrds[total_word_idx][0] != "sp"\
             and wrds[total_word_idx][0] != "{BR}":
             tmp_word["word"] = global_word_map[real_word_count][0]
+            if phonemes:
+                tmp_word["phonemes"] = word_phons[total_word_idx]
+
             tmp_word["line_idx"] = global_lineidx_map[real_word_count]
 
             if len(global_speaker_map) > 0:
@@ -538,7 +547,9 @@ def getopt2(name, opts, default = None) :
               help="Export json alignment")
 @click.option('--textgrid/--no-textgrid', default=False,
               help="Export Praat TextGrid alignment")
-def do_alignment(wavfile, trsfile, outfile, json, textgrid):
+@click.option('--phonemes/--no-phonemes', default=False,
+              help="Add phoneme information to JSON output")
+def do_alignment(wavfile, trsfile, outfile, json, textgrid, phonemes):
     # sr_override = getopt2("-r", opts, None)
     # wave_start = getopt2("-s", opts, "0.0")
     # wave_end = getopt2("-e", opts, None)
@@ -610,7 +621,8 @@ def do_alignment(wavfile, trsfile, outfile, json, textgrid):
 
     if json:
         # output as json
-        writeJSON(outfile, readAlignedMLF(output_mlf, SR, float(wave_start)))
+        writeJSON(outfile, readAlignedMLF(output_mlf, SR, float(wave_start)),
+                  phonemes=phonemes)
 
     if textgrid:
         # output the alignment as a Praat TextGrid
