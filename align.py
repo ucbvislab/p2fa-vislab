@@ -12,6 +12,7 @@
 
 import os
 import sys
+import shutil
 import getopt
 import wave
 import re
@@ -71,8 +72,8 @@ def prep_wav(orig_wav, out_wav, sr_override, sr_models, wave_start, wave_end):
         print "sox " + orig_wav + " -r " + str(SR) + " " + out_wav + "" + soxopts
         os.system("sox " + orig_wav + " -r " + str(SR) + " " + out_wav + "" + soxopts)
     else:
-        #print "Using wav file, already at sampling rate " + str(SR) + "."
-        os.system("cp -f " + orig_wav + " " + out_wav)
+        # os.system("cp -f " + orig_wav + " " + out_wav)
+        shutil.copy(orig_wav, out_wav)
 
     return SR
 
@@ -513,22 +514,26 @@ def writeTextGrid(outfile, word_alignments):
     # fw.close()
 
 def prep_working_directory() :
-    os.system("rm -r -f ./tmp")
-    os.system("mkdir ./tmp")
+    shutil.rmtree('tmp')
+    os.mkdir('tmp')
+
+    # os.system("rm -r -f ./tmp")
+    # os.system("mkdir ./tmp")
 
 def prep_scp(wavfile) :
-    fw = open('./tmp/codetr.scp', 'w')
-    fw.write(wavfile + ' ./tmp/tmp.plp\n')
+    fw = open('tmp/codetr.scp', 'w')
+    fw.write(wavfile + ' tmp/tmp.plp\n')
     fw.close()
-    fw = open('./tmp/test.scp', 'w')
-    fw.write('./tmp/tmp.plp\n')
+    fw = open('tmp/test.scp', 'w')
+    fw.write('tmp/tmp.plp\n')
     fw.close()
     
-def create_plp(hcopy_config) :
-    os.system('HCopy -T 1 -C ' + hcopy_config + ' -S ./tmp/codetr.scp')
+def create_plp(hcopy_config) :  
+    os.system('HCopy -T 1 -C ' + hcopy_config + ' -S tmp/codetr.scp')
     
 def viterbi(input_mlf, word_dictionary, output_mlf, phoneset, hmmdir) :
-    command = 'HVite -T 1 -a -m -I ' + input_mlf + ' -H ' + hmmdir + '/macros -H ' + hmmdir + '/hmmdefs  -S ./tmp/test.scp -i ' + output_mlf + ' -p 0.0 -s 5.0 ' + word_dictionary + ' ' + phoneset + ' > ./tmp/aligned.results'
+    command = 'HVite -T 1 -a -m -I ' + input_mlf + ' -H ' + hmmdir + '/macros -H ' + hmmdir + '/hmmdefs  -S tmp/test.scp -i ' + output_mlf + ' -p 0.0 -s 5.0 ' + word_dictionary + ' ' + phoneset + ' > tmp/aligned.results'
+    print command
     # command = 'HVite -T 1 -a -m -I ' + input_mlf + ' -H ' + hmmdir + '/macros -H ' + hmmdir + '/hmmdefs  -S ./tmp/test.scp -i ' + output_mlf + ' -p 0.0 -s 5.0 ' + word_dictionary + ' ' + phoneset
     os.system(command)
     
@@ -566,7 +571,7 @@ def do_alignment(wavfile, trsfile, outfile, json, textgrid, phonemes):
     hmmsubdir = ""
     sr_models = None
     if mypath == None :
-        mypath = os.path.dirname(os.path.realpath(__file__)) + "/model"
+        mypath = os.path.join(os.path.dirname(os.path.realpath(__file__)), "model")
         hmmsubdir = "FROM-SR"
         # sample rates for which there are acoustic models set up, otherwise
         # the signal must be resampled to one of these rates.
@@ -574,22 +579,26 @@ def do_alignment(wavfile, trsfile, outfile, json, textgrid, phonemes):
     
     if sr_override != None and sr_models != None and not sr_override in sr_models :
         raise ValueError, "invalid sample rate: not an acoustic model available"
-        
-    word_dictionary = "./tmp/dict"
-    input_mlf = './tmp/tmp.mlf'
-    output_mlf = './tmp/aligned.mlf'
+
+    word_dictionary = "tmp/dict"
+    input_mlf = 'tmp/tmp.mlf'
+    output_mlf = 'tmp/aligned.mlf'
     
     # create working directory
     prep_working_directory()
     
     # create ./tmp/dict by concatening our dict with a local one
-    if os.path.exists("dict.local"):
-        os.system("cat " + mypath + "/dict dict.local > " + word_dictionary)
-    else:
-        os.system("cat " + mypath + "/dict > " + word_dictionary)
-    
+
+    with open(word_dictionary, 'w') as wd_file:
+        with open(os.path.join(mypath, 'dict')) as dict_f:
+            wd_file.write(dict_f.read())
+
+        if os.path.exists("dict.local"):
+            with open("dict.local") as local_dict_f:
+                wd_file.write(local_dict_f.read())
+
     #prepare wavefile: do a resampling if necessary
-    tmpwav = "./tmp/sound.wav"
+    tmpwav = "tmp/sound.wav"
     SR = prep_wav(wavfile, tmpwav, sr_override, sr_models, wave_start, wave_end)
     
     if hmmsubdir == "FROM-SR" :
@@ -600,11 +609,17 @@ def do_alignment(wavfile, trsfile, outfile, json, textgrid, phonemes):
         between_token, dialog_file=True)
  
     # (do this again because we update dict.local in prep_mlf)
-    if os.path.exists("dict.tmp"):
-        os.system("cat " + mypath + "/dict dict.tmp > " + word_dictionary)
-        os.system("sort " + word_dictionary + " -o " + word_dictionary)
-    else:
-        os.system("cat " + mypath + "/dict > " + word_dictionary)
+    with open(os.path.join(mypath, 'dict')) as dict_f:
+        dict_lines = [line for line in dict_f]
+    try:
+        with open("dict.tmp") as tmp_dict_f:
+            dict_lines.extend([line for line in tmp_dict_f])
+    except:
+        pass
+    sorted_dict_lines = sorted(dict_lines)
+    with open(word_dictionary, 'w') as wd_file:
+        for line in sorted_dict_lines:
+            wd_file.write(line)
  
     #prepare scp files
     prep_scp(tmpwav)
