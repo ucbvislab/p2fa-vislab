@@ -13,6 +13,10 @@ import jsonschema
 @click.command()
 @click.argument('text_file')
 @click.option('--output-file', default=None, help="Output transcript file")
+def cli_text_to_transcript(text_file, output_file):
+    return text_to_transcript(text_file, output_file)
+
+
 def text_to_transcript(text_file, output_file):
     text = open(text_file).read()
 
@@ -44,4 +48,4 @@ def text_to_transcript(text_file, output_file):
     return
 
 if __name__ == "__main__":
-    text_to_transcript()
+    cli_text_to_transcript()
