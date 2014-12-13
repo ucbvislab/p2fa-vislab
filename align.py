@@ -11,13 +11,9 @@
 """
 
 import os
-import sys
 import shutil
-import getopt
 import wave
 import re
-import subprocess
-from subprocess import check_output
 try:
     import simplejson as json
 except:
@@ -140,7 +136,7 @@ def prep_mlf(trsfile, mlffile, word_dictionary, surround, between,
             # remove hanging punctuation before we get started
             txt = txt.replace(' ' + pun + ' ', ' ')
         
-        hyph_punct = re.compile(r"(-[-]+)")
+        hyph_punct = re.compile(r"(-[-]+[,\.:;!\?\"%\(\)-]*)")
         txt = hyph_punct.sub(r"\1 ", txt)
 
         txt = re.sub(r"([A-Za-z])\.\.\.([A-Za-z])", r"\1... \2", txt)
@@ -182,16 +178,49 @@ def prep_mlf(trsfile, mlffile, word_dictionary, surround, between,
                         else:
                             twrd2 = int(wrd2)
                         num2wrd = infl.number_to_words(twrd2, andword='', threshold=1000)
-                        num2wrd = num2wrd.upper()
-                        num2wrd = num2wrd.replace('-', ' ')
-                        num2wrd = num2wrd.replace(',', '')
-                        print num2wrd
-                        pr = Pronounce(words=[num2wrd]).p(add_fake_stress=True)
-                        prn = pr[num2wrd][1]
-                        if wrd2[-1] in ['s', 'S']:
-                            prn += ' S'
-                        dict_tmp[wrd2] = prn
-                        print prn
+
+                        if len(str(twrd2)) == 4 and 1000 < twrd2 < 2000:
+                            # this is probably a year
+                            year1 = str(twrd2)[:2]
+                            year2 = str(twrd2)[2:]
+
+                            year1word = infl.number_to_words(int(year1), andword='', threshold=1000)
+                            year2word = infl.number_to_words(int(year2), andword='', threshold=1000)
+
+                            extraword = None
+                            if year2 == "00":
+                                year2word = "HUNDRED"
+                            elif year2[0] == "0":
+                                extraword = "OH"
+                                year2word = infl.number_to_words(int(year2[1]), andword='', threshold=1000)
+
+                            year_all_words = [year1word, year2word]
+                            if extraword is not None:
+                                year_all_words.append(extraword)
+
+                            yearprs = Pronounce(words=year_all_words).p(add_fake_stress=True)
+                            year1pr = yearprs[year1word][1]
+                            year2pr = yearprs[year2word][1]
+
+                            if extraword is not None:
+                                dict_tmp[wrd2] = year1pr + ' ' + yearprs[extraword][1] + ' ' + year2pr
+                            else:
+                                dict_tmp[wrd2] = year1pr + ' ' + year2pr
+                            print wrd2, dict_tmp[wrd2]
+
+                        else:
+                            num2wrd = num2wrd.upper()
+                            num2wrd = num2wrd.replace('-', ' ')
+                            num2wrd = num2wrd.replace(',', '')
+                            num2wrd = num2wrd.replace(' ', '')
+                            print num2wrd
+                            # import pdb; pdb.set_trace()
+                            pr = Pronounce(words=[num2wrd]).p(add_fake_stress=True)
+                            prn = pr[num2wrd][1]
+                            if wrd2[-1] in ['s', 'S']:
+                                prn += ' S'
+                            dict_tmp[wrd2] = prn
+                            print prn
                     except:
                         # print "###", e
                         pr = Pronounce(words=[wrd2]).p(add_fake_stress=True)
@@ -278,6 +307,7 @@ def readAlignedMLF(mlffile, SR, wave_start):
     
     if len(lines) < 3 :
         raise ValueError("Alignment did not complete succesfully.")
+
             
     j = 2
     ret = []
@@ -343,18 +373,26 @@ def writeJSON(outfile, word_alignments, phonemes=False):
             word_length = len(global_word_map[real_word_count]) - 1
         else:
             word_length = 1
-                
-        tmp_word = {
-            "alignedWord": wrds[total_word_idx][0],
-            "start": round(wrds[total_word_idx][1], 5),
-            "end": round(wrds[total_word_idx + word_length][1], 5)
-        }
+        
+        try:
+
+            tmp_word = {
+                "alignedWord": wrds[total_word_idx][0],
+                "start": round(wrds[total_word_idx][1], 5),
+                "end": round(wrds[total_word_idx + word_length - 1][2], 5)
+                # "end": round(wrds[total_word_idx + word_length][1], 5)
+            }
+        except:
+            import pdb; pdb.set_trace()
         
         if wrds[total_word_idx][0] != "sp"\
             and wrds[total_word_idx][0] != "{BR}":
             tmp_word["word"] = global_word_map[real_word_count][0]
             if phonemes:
-                tmp_word["phonemes"] = word_phons[total_word_idx]
+                tmp_word["phonemes"] = []
+                for wl_i in range(word_length):
+                    tmp_word["phonemes"].extend(
+                        word_phons[total_word_idx + wl_i])
 
             tmp_word["line_idx"] = global_lineidx_map[real_word_count]
 
@@ -385,7 +423,8 @@ def writeJSON(outfile, word_alignments, phonemes=False):
                 else:
                     skipped_pauses += 1
             total_word_idx += 1
-            tmp_word["end"] = round(wrds[total_word_idx][1], 5)
+            tmp_word["end"] = round(wrds[total_word_idx - 1][2], 5)
+            # tmp_word["end"] = round(wrds[total_word_idx][1], 5)
             tmp_word["alignedWord"] = " ".join([w[0]
                 for w in wrds[total_word_idx - skipped_pauses -
                               word_length : total_word_idx]])
@@ -400,27 +439,39 @@ def writeJSON(outfile, word_alignments, phonemes=False):
 
         out_dict["words"].append(tmp_word)
 
-    # if wrds[-1][0] != "sp":
     tmp_word = {
         "alignedWord": wrds[-1][0],
         "start": round(wrds[-1][1], 5),
         "end": round(phons[-1][2], 5)
     }
     
-    if wrds[-1][0] != "sp" and wrds[-1][0] != "{BR}":
-        tmp_word["word"] = global_word_map[real_word_count][0]
-        tmp_word["line_idx"] = global_lineidx_map[real_word_count]
+    dont_add = False
 
-        if len(global_speaker_map) > 0:
-            tmp_word["speaker"] = global_speaker_map[real_word_count]
-        if len(global_emo_map) > 0:
-            tmp_word["emotion"] = global_emo_map[real_word_count] 
+    if wrds[-1][0] != "sp" and wrds[-1][0] != "{BR}":
+        try:
+            tmp_word["word"] = global_word_map[real_word_count][0]
+            tmp_word["line_idx"] = global_lineidx_map[real_word_count]
+
+            if len(global_speaker_map) > 0:
+                tmp_word["speaker"] = global_speaker_map[real_word_count]
+            if len(global_emo_map) > 0:
+                tmp_word["emotion"] = global_emo_map[real_word_count] 
+
+            if phonemes:
+                tmp_word["phonemes"] = word_phons[total_word_idx]
+
+        except:
+            # will get here if last word is compound word
+            dont_add = True
+            pass
+
     elif wrds[-1][0] == "sp":
         tmp_word["word"] = "{p}"
     elif wrds[-1][0] == "{BR}":
         tmp_word["word"] = "{br}"
     
-    out_dict["words"].append(tmp_word)
+    if not dont_add:
+        out_dict["words"].append(tmp_word)
     
     try:
         jsonschema.validate(out_dict, ALIGNMENT_SCHEMA)
@@ -554,10 +605,24 @@ def getopt2(name, opts, default = None) :
               help="Export Praat TextGrid alignment")
 @click.option('--phonemes/--no-phonemes', default=False,
               help="Add phoneme information to JSON output")
-def do_alignment(wavfile, trsfile, outfile, json, textgrid, phonemes):
+@click.option('--breaths/--no-breaths', default=False,
+              help="Detect breaths in speech")
+def cli_do_alignment(wavfile, trsfile, outfile, json, textgrid, phonemes, breaths):
+    return do_alignment(wavfile, trsfile, outfile, json, textgrid, phonemes, breaths)
+
+
+def do_alignment(wavfile, trsfile, outfile,
+                 json=True, textgrid=False,
+                 phonemes=False, breaths=False):
+
     # sr_override = getopt2("-r", opts, None)
     # wave_start = getopt2("-s", opts, "0.0")
     # wave_end = getopt2("-e", opts, None)
+    del global_word_map[:]
+    del global_speaker_map[:]
+    del global_emo_map[:]
+    del global_lineidx_map[:]
+
     sr_override = None
     wave_start = "0.0"
     wave_end = None
@@ -645,4 +710,4 @@ def do_alignment(wavfile, trsfile, outfile, json, textgrid, phonemes):
 
 
 if __name__ == '__main__':
-    do_alignment()
+    cli_do_alignment()
