@@ -40,19 +40,19 @@ def alignment_with_breaths(speech_file, alignment_file, out_alignment_file=None)
             comp.add_segment(seg)
             comp.export(
                 adjust_dynamics=False,
-                filename="tmpaudio/p%03d" % pause_idx,
+                filename="tmpaudio/p%06d" % pause_idx,
                 channels=1,
                 filetype='wav',
                 samplerate=speech.samplerate,
                 separate_tracks=False)
-            print "# classifying p%03d.wav" % pause_idx
+            print "# classifying p%06d.wav" % pause_idx
             print "# segment length:", x["end"] - x["start"]
             
             cls = classify_htk(
-                'tmpaudio/p%03d.wav' % pause_idx)
+                'tmpaudio/p%06d.wav' % pause_idx)
             
             # cls = breath_classifier.classify(
-            #     'tmp/pauses/p%03d.wav' % pause_idx)
+            #     'tmp/pauses/p%06d.wav' % pause_idx)
 
             for word in cls:
                 word["start"] = round(word["start"] + x["start"], 5)
