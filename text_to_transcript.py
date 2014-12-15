@@ -13,7 +13,8 @@ import jsonschema
 @click.command()
 @click.argument('text_file')
 @click.option('--output-file', default=None, help="Output transcript file")
-def text_to_transcript(text_file, output_file):
+@click.option('--speaker-name', default="Narrator", help="The name of the speaker")
+def text_to_transcript(text_file, output_file, speaker_name):
     text = open(text_file).read()
 
     filedir = os.path.dirname(os.path.realpath(__file__))
@@ -30,7 +31,7 @@ def text_to_transcript(text_file, output_file):
             continue
 
         line = {
-            "speaker": "narrator",
+            "speaker": speaker_name,
             "line": para
         }
         out.append(line)
