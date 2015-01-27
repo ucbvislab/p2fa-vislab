@@ -51,6 +51,8 @@ Usage
 
 The input ``audio_file.wav`` must be 16 bit and mono.
 
+### Transcript format
+
 The input transcript json must have the following [jsonschema](http://json-schema.org): 
 
 ```json
@@ -94,6 +96,8 @@ For example:
 ```
 
 (Although, there's no reason to list those two lines separately because they're the same speaker.) To convert a plain text transcript into a file that adheres to this schema, see [text\_to\_transcript.py](text_to_transcript.py).
+
+### Alignment format
 
 The output will be a json with the following jsonschema:
 
