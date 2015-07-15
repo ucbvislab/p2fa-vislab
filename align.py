@@ -565,7 +565,8 @@ def writeTextGrid(outfile, word_alignments):
     # fw.close()
 
 def prep_working_directory() :
-    shutil.rmtree('tmp')
+    if os.path.exists('tmp'):
+        shutil.rmtree('tmp')
     os.mkdir('tmp')
 
     # os.system("rm -r -f ./tmp")
