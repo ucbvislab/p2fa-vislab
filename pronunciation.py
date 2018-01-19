@@ -18,8 +18,8 @@ import re
 import string
 
 class Pronounce(object):
-    url = "http://www.speech.cs.cmu.edu/cgi-bin/tools/lmtool/run"
-    dict_re = re.compile(r"\d+\.dic")
+    url = "http://www.speech.cs.cmu.edu/cgi-bin/tools/logios/lextool.pl"
+    dict_re = re.compile(r"http://.*\d+\.dict")
     other_pr = re.compile(r"(.*)\(\d+\)$")
     vowel_re = re.compile(r"AA|AE|AH|AO|AW|AY|EH|ER|EY|IH|IY|OW|OY|UH|UW")
 
@@ -38,15 +38,15 @@ class Pronounce(object):
         punc_map = dict((ord(c), None) for c in string.punctuation)
         w_nopunc = [s.translate(punc_map) for s in w_upper]
 
-        file = {'corpus': ('words.txt', " ".join(w_nopunc))}
+        wordfile = {'wordfile': ('words.txt', " ".join(w_nopunc))}
 
         res = requests.post(Pronounce.url,
                             data={"formtype": "simple"},
-                            files=file, allow_redirects=True)
+                            files=wordfile, allow_redirects=True)
         base_url = res.url
         text = res.text
         dict_path = Pronounce.dict_re.search(text).group(0)
-        res = requests.get(base_url + dict_path)
+        res = requests.get(dict_path)
         
         # generate output dict
         pronunciations = {}
